@@ -1,0 +1,78 @@
+body{
+    background-color: #444444;
+    margin: 0;
+}
+
+*{
+    box-sizing: content-box;
+}
+
+.main-panel{
+    background-color: #929292;
+    position: relative;
+    left: 50px;
+    height: 40px;
+    width: 700px;
+    padding-left: 5px;
+    margin-bottom: 5px;
+    border-radius: 0 0 5px 5px;
+}
+
+.toolbar{
+    background-color: #929292;
+    height: 300px;
+    width: 36px;
+    padding-top: 3px;
+    margin-left: 5px;
+    margin-right: 20px;
+    border-radius: 2px;
+}
+
+.main-panel [class |= "icon"] {
+    background-color: #e3e3e3;
+    display: inline-block;
+    height: 34px;
+    width: 34px;
+    margin-right: 3px;
+    margin-top: 7px;
+    font-size: 30px;
+    position: relative;
+    bottom: 5px;
+    border-radius: 3px;
+}
+
+.toolbar [class |= "icon"] {
+    background-color: #e3e3e3;
+    width: 30px;
+    height: 30px;
+    margin-left: 3px;
+    margin-bottom: 3px;
+    border-radius: 2px;
+}
+
+.toolbar [class |= "icon"]:before{
+    position: relative;
+    left: 4px;
+    top: 4px;
+    font-size: 22px;
+    color: #224071;
+}
+
+.main-panel [class |= "icon"]:before {
+    position: relative;
+    left: 2px;
+    top: 2px;
+    color: #224071;
+}
+
+.main-panel [class |= "icon"]:nth-child(2):before {
+    left: 3px;
+}
+
+canvas{
+    position: absolute; 
+    left: 50px;
+    top: 45px;
+    background-color: white;
+    box-shadow: 5px 5px 5px #222222;
+}
