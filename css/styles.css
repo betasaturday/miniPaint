@@ -39,6 +39,7 @@ body{
     position: relative;
     bottom: 5px;
     border-radius: 3px;
+    color: #224071;
 }
 
 .toolbar [class |= "icon"] {
@@ -48,6 +49,13 @@ body{
     margin-left: 3px;
     margin-bottom: 3px;
     border-radius: 2px;
+    color: #224071;
+    cursor: default;
+}
+
+.toolbar [class |= "icon"]:nth-of-type(7) {
+    position: relative;
+    top: 36px;
 }
 
 .toolbar [class |= "icon"]:before{
@@ -55,14 +63,12 @@ body{
     left: 4px;
     top: 4px;
     font-size: 22px;
-    color: #224071;
 }
 
 .main-panel [class |= "icon"]:before {
     position: relative;
     left: 2px;
     top: 2px;
-    color: #224071;
 }
 
 .main-panel [class |= "icon"]:nth-child(2):before {
@@ -76,3 +82,35 @@ canvas{
     background-color: white;
     box-shadow: 5px 5px 5px #222222;
 }
+
+.toolbar [class $= "active-tool"] {
+    background-color: #97dbff;
+}
+
+div.sp-replacer{
+    border: 1px solid white;
+}
+
+.color1 ~ .sp-replacer, .color2 ~ .sp-replacer{
+    width: 18px;
+    height: 18px;
+    position: absolute;
+}
+
+.color1 + .sp-replacer{
+    top: 246px;
+    left: 8px;
+    z-index: 10;
+}
+
+.color2 + .sp-replacer{
+    top: 259px;
+    left: 18px;
+}
+
+.sp-replacer .sp-preview{
+    border: 0;
+    width: 20px;
+    height: 20px;
+}
+
