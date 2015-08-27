@@ -101,3 +101,7 @@
 .icon-text:before {
   content: "v";
 }
+.icon-eraser:before {
+  content: "u";
+}
+

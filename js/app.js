@@ -1,6 +1,6 @@
 (function () {
     
-    var toolNames = ["select-rect", "brush", "pencil", "polygon",
+    var toolNames = ["select-rect", "brush", "pencil", "eraser", "polygon",
                 "spray", "paint-bucket", "text"];
     var mainPanelItems = ["new", "open", "save"];
     var moduleNames = ["draw"];
@@ -41,12 +41,19 @@
     }
     
     function changeFillColor(tinycolor) {
-        ctx.fillStyle = tinycolor.toHexString();
+        if (!tinycolor)
+            console.log("change is here");
+        else
+            ctx.fillStyle = tinycolor.toHexString();
     }
     
     function changeStrokeColor(tinycolor) {
-        ctx.strokeStyle = tinycolor.toHexString();
-        console.log(ctx.strokeStyle);
+        if (!tinycolor)
+            console.log("change is here");
+        else {
+            ctx.strokeStyle = tinycolor.toHexString();
+            console.log(ctx.strokeStyle);
+        }
     }
     
     var changeColors = [changeStrokeColor, changeFillColor];
@@ -58,6 +65,8 @@
     canvas = mainWindow.insertBefore(create("canvas", {width: 700, height: 500}), firstScript);
     ctx = canvas.getContext("2d");
     ctx.strokeStyle = "#ff00ff";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     //initialize common
     common.ctx = ctx;
@@ -97,9 +106,80 @@
             change: changeColors[i]
         });
     }        
-
     
-
+    //add save menu
+    var saveicon = mainPanel.querySelector(".icon-save");
+    var link = saveicon.appendChild(create("a", {href: "/"}));
+    function update() {
+        try {
+          link.href = ctx.canvas.toDataURL();
+        } catch (e) {
+          if (e instanceof SecurityError)
+            link.href = "javascript:alert(" +
+              JSON.stringify("Can't save: " + e.toString()) + ")";
+          else
+            throw e;
+        }
+      }
+      link.addEventListener("mouseover", update);
+      link.addEventListener("focus", update);
+    
+    //add open menu
+    function loadImageURL(url) {
+      var image = document.createElement("img");
+      image.addEventListener("load", function() {
+        var fillColor = ctx.fillStyle, size = ctx.lineWidth,
+            strokeColor = ctx.strokeStyle;
+        ctx.canvas.width = image.width;
+        ctx.canvas.height = image.height;
+        ctx.drawImage(image, 0, 0);
+        ctx.fillStyle = fillColor;
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = size;
+      });
+      image.src = url;
+    }
+    
+    var input = create("input", {type: "file", accept: "image/*"});
+    mainPanel.appendChild(input);
+    input.addEventListener("change", function() {
+        
+        if (input.files.length == 0) return;
+        var reader = new FileReader();
+        reader.addEventListener("load", function() {
+          loadImageURL(reader.result);
+        });
+        reader.readAsDataURL(input.files[0]);
+        
+    });
+    
+    var openicon = document.querySelector(".icon-open");
+    openicon.addEventListener("click", function(event) {
+        if (input.style.display == "inline-block")
+            input.style.display = "none";
+        else
+            input.style.display = "inline-block";
+    });
+    
+    //add new menu
+    var newicon = document.querySelector(".icon-new");
+    newicon.addEventListener("click", function(event) {
+        var w = +prompt("Enter new width:");
+        var h = +prompt("And height:");
+        if (w && h && w >= 10 && h >= 10 && w <= 1000 && h <= 1000) {
+            var fillColor = ctx.fillStyle, size = ctx.lineWidth,
+            strokeColor = ctx.strokeStyle;
+            ctx.canvas.width = w;
+            ctx.canvas.height = h;
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = fillColor;
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = size;           
+        }
+        else
+            alert("Impossible");
+    });
     
     //selecting tools
     toolbar.addEventListener("click", function(event) {

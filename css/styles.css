@@ -20,7 +20,7 @@ body{
 
 .toolbar{
     background-color: #929292;
-    height: 300px;
+    height: 350px;
     width: 36px;
     padding-top: 3px;
     margin-left: 5px;
@@ -53,7 +53,7 @@ body{
     cursor: default;
 }
 
-.toolbar [class |= "icon"]:nth-of-type(7) {
+.toolbar [class |= "icon"]:nth-of-type(8) {
     position: relative;
     top: 36px;
 }
@@ -98,13 +98,13 @@ div.sp-replacer{
 }
 
 .color1 + .sp-replacer{
-    top: 246px;
+    top: 279px;
     left: 8px;
     z-index: 10;
 }
 
 .color2 + .sp-replacer{
-    top: 259px;
+    top: 292px;
     left: 18px;
 }
 
@@ -122,4 +122,23 @@ div.sp-replacer{
     margin-left: 10px;
 }
 
+.icon-save a{
+    display: inline-block;
+    width: 34px;
+    height: 34px;
+    position: absolute;
+    left: 0px;
+}
+
+input[type="file"] {
+    
+    position: relative;
+    top: -50%;
+    display: none;
+
+    -webkit-transform: translateY(50%);
+    -ms-transform: translateY(50%);
+    transform: translateY(50%);
+
+}
 

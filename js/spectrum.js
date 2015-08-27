@@ -176,7 +176,6 @@
     }
 
     function spectrum(element, o) {
-
         var opts = instanceOptions(o, element),
             flat = opts.flat,
             showSelectionPalette = opts.showSelectionPalette,
@@ -501,7 +500,7 @@
             }
         };
         callbacks.change = newChange;
-
+        
         var addColorToSelectionPalette = function(color){
             if (showSelectionPalette) {
                 var rgb = tinycolor(color).toRgbString();
@@ -597,6 +596,7 @@
             }
         }
 
+        newChange = callbacks.change;
         var toggle = function() {
             if (visible) {
                 hide();
@@ -605,7 +605,8 @@
                 show();
             }
         }
-
+        callbacks.change = newChange;
+        
         function show() {
             var event = $.Event('beforeShow.spectrum');
 
@@ -725,11 +726,13 @@
                 a: Math.round(currentAlpha * 100) / 100
             }, { format: opts.format || currentPreferredFormat });
         }
-
+        
+        newChange = callbacks.change;
         var isValid = function() {
             return !textInput.hasClass("sp-validation-error");
         };
-
+        callbacks.change = newChange;
+        
         function move() {
             updateUI();
 
@@ -857,7 +860,9 @@
                 });
             }
         }
-
+        
+        newChange = callbacks.change;
+        
         var updateOriginalInput = function(fireCallback) {
             var color = get(),
                 displayColor = '',
@@ -878,7 +883,8 @@
                 boundElement.trigger('change', [ color ]);
             }
         }
-
+        callbacks.change = newChange;
+        
         function reflow() {
             dragWidth = dragger.width();
             dragHeight = dragger.height();
@@ -1175,6 +1181,7 @@
         // Initializing a new instance of spectrum
         return this.spectrum("destroy").each(function () {
             var options = $.extend({}, opts, $(this).data());
+            
             var spect = spectrum(this, options);
             $(this).data(dataID, spect.id);
         });
@@ -1200,9 +1207,10 @@
     $.fn.spectrum.processNativeColorInputs = function () {
         var colorInputs = $("input[type=color]");
         if (colorInputs.length && !inputTypeColorSupport()) {
-            colorInputs.spectrum({
-                preferredFormat: "hex6"
-            });
+            
+//            colorInputs.spectrum({
+//                preferredFormat: "hex6"
+//            });
         }
     };
 

@@ -33,7 +33,8 @@ function drawModule(common) {
     var draw = Object.create(null),
         brush = Object.create(null),
         pencil = Object.create(null),
-        spray = Object.create(null);
+        spray = Object.create(null),
+        eraser = Object.create(null);
     var ctx = common.ctx;
     
     ctx.fillStyle = "white";
@@ -74,8 +75,26 @@ function drawModule(common) {
         
     };
     
+    eraser.width = 5;
+    eraser.controls = Object.create(null);
+    eraser.controls.widthInput = common.create("input", {type: "number", min: "1", max: "200", value: "5", class: "eraser-width"});
+    common.mainPanel.insertBefore(eraser.controls.widthInput, common.controlsPlaceHolder);
+    eraser.handlers = Object.create(null);
+    eraser.handlers.widthInput = function(event) {
+        
+        var newVal = +eraser.controls.widthInput.value;
+        if (newVal >= +eraser.controls.widthInput.min &&
+            newVal <= +eraser.controls.widthInput.max)
+        {
+            eraser.width = newVal;
+        }
+        else
+            eraser.controls.widthInput.value = eraser.width;
+        
+    };
+
     
-    
+    eraser.onselect = 
     brush.onselect = 
     pencil.onselect =
     spray.onselect =
@@ -89,11 +108,13 @@ function drawModule(common) {
                     var control = this.controls[name];
                     control.style.display = "inline-block";
                     control.addEventListener("change", this.handlers[name]);
+                    control.addEventListener("blur", this.handlers[name]);
                 }
             }
 
         };
     
+    eraser.ondeselect = 
     brush.ondeselect =
     pencil.ondeselect = 
     spray.ondeselect =
@@ -107,6 +128,7 @@ function drawModule(common) {
                     var control = this.controls[name];
                     control.style.display = "none";
                     control.removeEventListener("change", this.handlers[name]);
+                    control.removeEventListener("blur", this.handlers[name]);
                 }
             }
         };
@@ -115,8 +137,10 @@ function drawModule(common) {
        if (event.which == 1) {
            event.preventDefault();
            brush.pos = relativeCoords(ctx.canvas, event);
+           brush.handlers.widthInput(); 
            ctx.lineWidth = brush.width;
            ctx.lineCap = "round";
+
 
            trackEventListeners(brush.mousemoveHandler.bind(brush));
        }
@@ -127,6 +151,7 @@ function drawModule(common) {
            event.preventDefault();
            spray.pos = relativeCoords(ctx.canvas, event);
            swapColors();
+           spray.handlers.radiusInput();
 
            spray.timer = setInterval(function() {
                var num = spray.radius*spray.radius*Math.PI*0.3;
@@ -151,6 +176,21 @@ function drawModule(common) {
         }
     };
     
+    eraser.mousedownHandler = function(event) {
+       if (event.which == 1) {
+            event.preventDefault();
+            eraser.pos = relativeCoords(ctx.canvas, event);
+            eraser.previousColor = ctx.strokeStyle;
+            ctx.strokeStyle = "white";
+            ctx.lineCap = "round";
+           eraser.handlers.widthInput();
+           ctx.lineWidth = eraser.width;
+           
+           trackEventListeners(eraser.mousemoveHandler.bind(eraser), eraser.mouseupHandler.bind(eraser));
+       }
+    };
+    
+    eraser.mousemoveHandler = 
     brush.mousemoveHandler =
     pencil.mousemoveHandler = 
     function(event) {
@@ -174,9 +214,15 @@ function drawModule(common) {
         swapColors();
     };
     
+    eraser.mouseupHandler = 
+    function(event) {
+        ctx.strokeStyle = this.previousColor;
+    };
+    
     
     draw.brush = brush;
     draw.spray = spray;
     draw.pencil = pencil;
+    draw.eraser = eraser;
     return draw;
 }
