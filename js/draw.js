@@ -1,5 +1,31 @@
 function drawModule(common) {
     
+    var dx = [0, 1, 0, -1],
+        dy = [-1, 0, 1, 0];
+    var used = [];
+    var painting = false;
+    function pad2(c) {
+        return c.length == 1 ? '0' + c : '' + c;
+    }
+    function rgbToHex(r, g, b) {
+
+        var hex = [
+            pad2(Math.round(r).toString(16)),
+            pad2(Math.round(g).toString(16)),
+            pad2(Math.round(b).toString(16))
+        ];
+
+        return "#" + hex.join("");
+    }
+    function ok(pos) {
+        return pos.x >= 0 && pos.y >= 0 
+            && pos.x < ctx.canvas.width && pos.y < ctx.canvas.height
+            && !used[pos.y][pos.x];
+    }
+    function colorAt(imageData, x, y) {
+        var start = (x + y*ctx.canvas.width)*4;
+        return rgbToHex(imageData[start], imageData[start + 1], imageData[start + 2]);
+    }
     function relativeCoords(element, event) {
         var rect = element.getBoundingClientRect();
         return {x: Math.floor(event.clientX - rect.left),
@@ -34,7 +60,8 @@ function drawModule(common) {
         brush = Object.create(null),
         pencil = Object.create(null),
         spray = Object.create(null),
-        eraser = Object.create(null);
+        eraser = Object.create(null),
+        paintBucket = Object.create(null);
     var ctx = common.ctx;
     
     ctx.fillStyle = "white";
@@ -94,6 +121,7 @@ function drawModule(common) {
     };
 
     
+    paintBucket.onselect =
     eraser.onselect = 
     brush.onselect = 
     pencil.onselect =
@@ -114,6 +142,7 @@ function drawModule(common) {
 
         };
     
+    paintBucket.ondeselect = 
     eraser.ondeselect = 
     brush.ondeselect =
     pencil.ondeselect = 
@@ -190,6 +219,52 @@ function drawModule(common) {
        }
     };
     
+    paintBucket.mousedownHandler = function(event) {
+        if (event.which == 1 && !painting) {
+            painting = true;
+            event.preventDefault();
+            var pos = relativeCoords(ctx.canvas, event);
+            swapColors();
+            
+            var imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+            imageData = imageData.data;
+            var queue = [];
+            queue.push(pos);
+            if (colorAt(imageData, pos.x, pos.y) == ctx.fillStyle) {
+                swapColors();
+                painting = false;
+                return;
+            }
+            for (var i = 0; i < ctx.canvas.height + 10; ++i) {
+                used[i] = [];
+            }
+            var color = colorAt(imageData, pos.x, pos.y),
+                fr = 0,
+                to = 1;
+            
+            while(fr < to)
+            {
+                var newTo = to;
+                for (var i = fr; i < to; ++i) {
+                    var cur = queue[i];
+                    for (var j = 0; j < 4; ++j) {
+                        var nw = {x: cur.x + dx[j], y: cur.y + dy[j]};
+                        if (ok(nw) && colorAt(imageData, nw.x, nw.y) == color) {
+                            ctx.fillRect(nw.x, nw.y, 1, 1);
+                            queue.push(nw);
+                            ++newTo;
+                            used[nw.y][nw.x] = true;
+                        }
+                    }
+                }
+                fr = to;
+                to = newTo;
+            }
+            swapColors();
+            painting = false;
+        }
+    };
+    
     eraser.mousemoveHandler = 
     brush.mousemoveHandler =
     pencil.mousemoveHandler = 
@@ -224,5 +299,6 @@ function drawModule(common) {
     draw.spray = spray;
     draw.pencil = pencil;
     draw.eraser = eraser;
+    draw["paint-bucket"] = paintBucket;
     return draw;
 }
