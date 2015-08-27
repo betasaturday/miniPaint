@@ -274,7 +274,7 @@
             reflow();
         }
 
-        function initialize() {
+        var initialize = function() {
 
             if (IE) {
                 container.find("*:not(input)").attr("unselectable", "on");
@@ -477,7 +477,8 @@
             initialColorContainer.delegate(".sp-thumb-el:nth-child(1)", paletteEvent, { ignore: true }, paletteElementClick);
         }
 
-        function updateSelectionPaletteFromStorage() {
+        var newChange = callbacks.change.bind({});
+        var updateSelectionPaletteFromStorage = function() {
 
             if (localStorageKey && window.localStorage) {
 
@@ -498,9 +499,10 @@
                 }
                 catch (e) { }
             }
-        }
+        };
+        callbacks.change = newChange;
 
-        function addColorToSelectionPalette(color) {
+        var addColorToSelectionPalette = function(color){
             if (showSelectionPalette) {
                 var rgb = tinycolor(color).toRgbString();
                 if (!paletteLookup[rgb] && $.inArray(rgb, selectionPalette) === -1) {
@@ -517,9 +519,9 @@
                     catch(e) { }
                 }
             }
-        }
+        };
 
-        function getUniqueSelectionPalette() {
+        var getUniqueSelectionPalette = function() {
             var unique = [];
             if (opts.showPalette) {
                 for (var i = 0; i < selectionPalette.length; i++) {
@@ -532,7 +534,7 @@
             }
 
             return unique.reverse().slice(0, opts.maxSelectionSize);
-        }
+        };
 
         function drawPalette() {
 
@@ -595,7 +597,7 @@
             }
         }
 
-        function toggle() {
+        var toggle = function() {
             if (visible) {
                 hide();
             }
@@ -724,9 +726,9 @@
             }, { format: opts.format || currentPreferredFormat });
         }
 
-        function isValid() {
+        var isValid = function() {
             return !textInput.hasClass("sp-validation-error");
-        }
+        };
 
         function move() {
             updateUI();
@@ -856,7 +858,7 @@
             }
         }
 
-        function updateOriginalInput(fireCallback) {
+        var updateOriginalInput = function(fireCallback) {
             var color = get(),
                 displayColor = '',
                 hasChanged = !tinycolor.equals(color, colorOnShow);

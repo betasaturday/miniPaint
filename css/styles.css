@@ -114,3 +114,12 @@ div.sp-replacer{
     height: 20px;
 }
 
+.main-panel [type="number"] {
+    width: 40px;
+    display: none;
+    position: relative;
+    top: -30%;
+    margin-left: 10px;
+}
+
+

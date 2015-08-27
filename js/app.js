@@ -1,14 +1,16 @@
 (function () {
-    "use strict";
     
     var toolNames = ["select-rect", "brush", "pencil", "polygon",
                 "spray", "paint-bucket", "text"];
     var mainPanelItems = ["new", "open", "save"];
-    var toolbar, mainPanel, canvas, cx,
+    var moduleNames = ["draw"];
+    var toolbar, mainPanel, canvas, ctx,
         mainWindow = document.body,
         firstScript = document.querySelector("script"),
         tools = Object.create(null),
-        activeTool;
+        activeTool,
+        controlsPlaceHolder = null, 
+        common = Object.create(null);
     
     function create(tagName, attributes) {
         var node = document.createElement(tagName);
@@ -39,11 +41,12 @@
     }
     
     function changeFillColor(tinycolor) {
-        cx.fillStyle = tinycolor.toHexString();
+        ctx.fillStyle = tinycolor.toHexString();
     }
     
     function changeStrokeColor(tinycolor) {
-        cx.strokeStyle = tinycolor.toHexString();
+        ctx.strokeStyle = tinycolor.toHexString();
+        console.log(ctx.strokeStyle);
     }
     
     var changeColors = [changeStrokeColor, changeFillColor];
@@ -53,54 +56,52 @@
     mainPanel = mainWindow.insertBefore(create("div", {class: "main-panel"}), firstScript);
     toolbar = mainWindow.insertBefore(create("div", {class: "toolbar"}), firstScript);
     canvas = mainWindow.insertBefore(create("canvas", {width: 700, height: 500}), firstScript);
-    cx = canvas.getContext("2d");
+    ctx = canvas.getContext("2d");
+    ctx.strokeStyle = "#ff00ff";
+
+    //initialize common
+    common.ctx = ctx;
+    common.mainPanel = mainPanel;
+    common.create = create;
+    common.controlsPlaceHolder = controlsPlaceHolder;
+    
+        
+    //add main panel items
+    mainPanelItems.forEach(function(itemName) {
+        mainPanel.appendChild(create("div", {class: "icon-" + itemName}));
+    });
+    
+    //initialize modules
+    var draw = drawModule(common);
+    for (var toolName in draw) {
+        tools[toolName] = draw[toolName];
+    }
+    
+    //add tools
+    toolNames.forEach(function(toolName) {
+        toolbar.appendChild(create("div", {class: "icon-" + toolName}));
+        if (!tools[toolName])
+            tools[toolName] = Object.create(null);
+    });
+    activateTool("select-rect");
+
+    //add color pickers
+    toolbar.appendChild(create("input", {type: "color", class: "color1", id: "color1", value: "#ff00ff"}));
+    toolbar.appendChild(create("input", {type: "color", class: "color2", id: "color2", value: "#ffffff"}));
+    for (var i= 0; i < 2; ++i) {
+        var colorPicker = $("#color" + (i + 1));
+        colorPicker.spectrum({
+            preferredFormat: "hex",
+            showInitial: true,
+            showInput: true,
+            change: changeColors[i]
+        });
+    }        
 
     
-    (function addTools() {
-        toolNames.forEach(function(toolName) {
-            toolbar.appendChild(create("div", {class: "icon-" + toolName}));
-            if (window[toolName])
-            {
-                tools[toolName] = window[toolName];
-            }
-            else
-                tools[toolName] = Object.create(null);
-            tools[toolName].cx = cx;
-            tools[toolName].properties = Object.create(null);
-            tools[toolName].controls = Object.create(null);
-        });
-        activateTool("select-rect");
-        
-        toolbar.appendChild(create("input", {type: "color", class: "color1", id: "color1"}));
-        toolbar.appendChild(create("input", {type: "color", class: "color2", id: "color2", value: "#ffffff"}));
-        
-        
-    } ());
-    
-    (function addMainPanelItems() {
-        mainPanelItems.forEach(function(itemName) {
-            mainPanel.appendChild(create("div", {class: "icon-" + itemName}));
-        });
-    } ());
-    
-    (function createModules() {
-        
-    }());
-    
-    (function addColorPickers() {
-        for (var i= 0; i < 2; ++i) {
-            var colorPicker = $("#color" + (i + 1));
-            colorPicker.spectrum({
-                preferredFormat: "hex",
-                showInitial: true,
-                showInput: true,
-                change: changeColors[i]
-            });
-        }
-    }());
 
     
-    
+    //selecting tools
     toolbar.addEventListener("click", function(event) {
         var toolEl = event.target,
             className = toolEl.className;
