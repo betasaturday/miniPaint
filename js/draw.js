@@ -4,6 +4,22 @@ function drawModule(common) {
         dy = [-1, 0, 1, 0];
     var used = [];
     var painting = false;
+    var fillColor = {},
+        w, h;
+    function setColor(data, x, y) {
+        var st = (x + y*ctx.canvas.width)*4;
+        fillColor.r = data[st];
+        fillColor.g = data[st + 1];
+        fillColor.b = data[st + 2];
+        w = ctx.canvas.width;
+        h = ctx.canvas.height;
+    }
+    function colorEquals(data, x, y) {
+        var st = (x + y*ctx.canvas.width)*4;
+        return fillColor.r === data[st] 
+            && fillColor.g === data[st + 1]
+            && fillColor.b === data[st + 2];
+    }
     function pad2(c) {
         return c.length == 1 ? '0' + c : '' + c;
     }
@@ -17,10 +33,10 @@ function drawModule(common) {
 
         return "#" + hex.join("");
     }
-    function ok(pos) {
-        return pos.x >= 0 && pos.y >= 0 
-            && pos.x < ctx.canvas.width && pos.y < ctx.canvas.height
-            && !used[pos.y][pos.x];
+    function ok(x, y) {
+        return x >= 0 && y >= 0 
+            && x < w && y < h
+            && !used[y][x];
     }
     function colorAt(imageData, x, y) {
         var start = (x + y*ctx.canvas.width)*4;
@@ -34,14 +50,14 @@ function drawModule(common) {
     function trackEventListeners(onDraw, onEndDraw) {
 
         function onEnd(event) {
-            ctx.canvas.removeEventListener("mousemove", onDraw);
-            ctx.canvas.removeEventListener("mouseup", onEnd);
+            overlay.canvas.removeEventListener("mousemove", onDraw);
+            overlay.canvas.removeEventListener("mouseup", onEnd);
             if (onEndDraw)
-                onEndDraw();
+                onEndDraw(event);
         }
 
-        ctx.canvas.addEventListener("mousemove", onDraw);
-        ctx.canvas.addEventListener("mouseup", onEnd);
+        overlay.canvas.addEventListener("mousemove", onDraw);
+        overlay.canvas.addEventListener("mouseup", onEnd);
     }
     function getRandomPoint(center, radius) {
         var angle = Math.random()*Math.PI*2,
@@ -56,13 +72,54 @@ function drawModule(common) {
         ctx.fillStyle = ctx.strokeStyle;
         ctx.strokeStyle = old;
     }
+    function getRect(fr, to) {
+        return {left: Math.min(fr.x, to.x),
+                top: Math.min(fr.y, to.y),
+                width: Math.abs(fr.x - to.x),
+                height: Math.abs(fr.y - to.y)};
+    }
+    function clear(fr, to, cx) {
+        var rect = getRect(fr, to);
+        cx.clearRect(rect.left - ctx.lineWidth*5, rect.top - ctx.lineWidth*5, rect.width + ctx.lineWidth*10, rect.height + ctx.lineWidth*10);
+    }
+    function drawPoly(fr, to, cx) {
+        var rect = getRect(fr, to);
+        if (rect.width > 100)
+            console.log("check");
+        var radius = rect.width/2;
+        var ratio = rect.height/rect.width,
+            angle = Math.PI/2,
+            n = poly.sides,
+            center = {x: (fr.x + to.x)/2,
+                        y: (fr.y + to.y)/2},
+            coords = [{x: center.x, y: center.y - radius*ratio}];
+        
+        for (var i = 1; i < n; ++i) {
+            angle += 2*Math.PI/n;
+            coords.push({x: Math.cos(angle)*radius + center.x,
+                        y: -Math.sin(angle)*radius*ratio + center.y});
+        }
+        
+        cx.beginPath();
+        cx.moveTo(Math.floor(coords[0].x), Math.floor(coords[0].y));
+        for (var i = 1; i < n; ++i)
+            cx.lineTo(Math.floor(coords[i].x),
+                      Math.floor(coords[i].y));
+        cx.closePath();
+        cx.fill();
+        cx.stroke();
+    }
+    
     var draw = Object.create(null),
         brush = Object.create(null),
         pencil = Object.create(null),
         spray = Object.create(null),
         eraser = Object.create(null),
-        paintBucket = Object.create(null);
-    var ctx = common.ctx;
+        paintBucket = Object.create(null),
+        text = Object.create(null),
+        poly = Object.create(null);
+    var ctx = common.ctx,
+        overlay = common.overlay;
     
     ctx.fillStyle = "white";
 
@@ -119,8 +176,61 @@ function drawModule(common) {
             eraser.controls.widthInput.value = eraser.width;
         
     };
+    
+    text.size = 10;
+    text.controls = Object.create(null);
+    text.controls.sizeInput = common.create("input", {type: "number", min: "8", max: "200", value: "10", class: "font-size"});
+    common.mainPanel.insertBefore(text.controls.sizeInput, common.controlsPlaceHolder);
+    text.handlers = Object.create(null);
+    text.handlers.sizeInput = function(event) {
+        
+        var newVal = +text.controls.sizeInput.value;
+        if (newVal >= +text.controls.sizeInput.min &&
+            newVal <= +text.controls.sizeInput.max)
+        {
+            text.size = newVal;
+        }
+        else
+            text.controls.sizeInput.value = text.size;
+        
+    };
+    
+    poly.sides = 4;
+    poly.controls = Object.create(null);
+    poly.controls.sidesInput = common.create("input", {type: "number", min: "3", max: "50", value: "4", class: "poly-sides"});
+    common.mainPanel.insertBefore(poly.controls.sidesInput, common.controlsPlaceHolder);
+    poly.handlers = Object.create(null);
+    poly.handlers.sidesInput = function(event) {
+        
+        var newVal = +poly.controls.sidesInput.value;
+        if (newVal >= +poly.controls.sidesInput.min &&
+            newVal <= +poly.controls.sidesInput.max)
+        {
+            poly.sides = newVal;
+        }
+        else
+            poly.controls.sidesInput.value = poly.sides;
+        
+    };
+    poly.width = 5;
+    poly.controls.widthInput = common.create("input", {type: "number", min: "1", max: "30", value: "1", class: "poly-width"});
+    common.mainPanel.insertBefore(poly.controls.widthInput, common.controlsPlaceHolder);
+    poly.handlers.widthInput = function(event) {
+        
+        var newVal = +poly.controls.widthInput.value;
+        if (newVal >= +poly.controls.widthInput.min &&
+            newVal <= +poly.controls.widthInput.max)
+        {
+            poly.width = newVal;
+        }
+        else
+            poly.controls.widthInput.value = poly.width;
+        
+    };
 
     
+    poly.onselect = 
+    text.onselect = 
     paintBucket.onselect =
     eraser.onselect = 
     brush.onselect = 
@@ -128,7 +238,7 @@ function drawModule(common) {
     spray.onselect =
         function() {
             //add mousedown EL
-            ctx.canvas.addEventListener("mousedown", this.mousedownHandler);
+            overlay.canvas.addEventListener("mousedown", this.mousedownHandler);
 
             //show controls
             if (this.controls) {
@@ -142,6 +252,8 @@ function drawModule(common) {
 
         };
     
+    poly.ondeselect = 
+    text.ondeselect = 
     paintBucket.ondeselect = 
     eraser.ondeselect = 
     brush.ondeselect =
@@ -149,7 +261,7 @@ function drawModule(common) {
     spray.ondeselect =
         function() {
             //remove mousedown EL
-            ctx.canvas.removeEventListener("mousedown", this.mousedownHandler);
+            overlay.canvas.removeEventListener("mousedown", this.mousedownHandler);
         
             //hide controls
             if (this.controls) {
@@ -221,47 +333,103 @@ function drawModule(common) {
     
     paintBucket.mousedownHandler = function(event) {
         if (event.which == 1 && !painting) {
-            painting = true;
+            requestAnimationFrame( function() {
+                var t0 = performance.now();
+                painting = true;
+                event.preventDefault();
+                var pos = relativeCoords(ctx.canvas, event);
+                swapColors();
+
+                var imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+                imageData = imageData.data;
+
+                if (colorAt(imageData, pos.x, pos.y) == ctx.fillStyle) {
+                    swapColors();
+                    painting = false;
+                    return;
+                }
+                var queue = [];
+                queue.push(pos);
+                for (var i = 0, w = ctx.canvas.width + 5, h = ctx.canvas.height + 5; i < h; ++i) {
+                    used[i] = [];
+                    used[i][w] = false;
+                }
+                queue[ctx.canvas.width*ctx.canvas.height] = {};
+                var fr = 0,
+                    to = 1;
+                setColor(imageData, pos.x, pos.y);
+                
+                while(fr < to)
+                {
+                    var newTo = to;
+                    while(fr < to) {
+                        var x = queue[fr].x, y = queue[fr].y;
+                        for (var j = 0; j < 4; ++j) {
+                            var nx = x + dx[j], ny = y + dy[j];
+                            while (ok(nx, ny) && colorEquals(imageData, nx, ny)) {
+                                ctx.fillRect(nx, ny, 1, 1);
+                                queue[newTo++] = {x: nx, y: ny};
+                                used[ny][nx] = true;
+                                ny += dy[j];
+                                nx += dx[j];
+                            }
+
+                            //ctx.fillRect(x + dx[j], y + dy[j], nx - x - dx[j] + 1, ny - dy[j] - y + 1);
+                        }
+                        ++fr;
+                    }
+                    fr = to;
+                    to = newTo;
+                }
+
+                swapColors();
+                
+                
+
+                painting = false;
+                var t1 = performance.now();
+                console.log("finished " + (t1 - t0));
+            });
+        }
+    };
+    
+    text.mousedownHandler = function(event) {
+        if (event.which == 1) {
             event.preventDefault();
             var pos = relativeCoords(ctx.canvas, event);
+            text.handlers.sizeInput();
+            
             swapColors();
-            
-            var imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
-            imageData = imageData.data;
-            var queue = [];
-            queue.push(pos);
-            if (colorAt(imageData, pos.x, pos.y) == ctx.fillStyle) {
-                swapColors();
-                painting = false;
-                return;
-            }
-            for (var i = 0; i < ctx.canvas.height + 10; ++i) {
-                used[i] = [];
-            }
-            var color = colorAt(imageData, pos.x, pos.y),
-                fr = 0,
-                to = 1;
-            
-            while(fr < to)
-            {
-                var newTo = to;
-                for (var i = fr; i < to; ++i) {
-                    var cur = queue[i];
-                    for (var j = 0; j < 4; ++j) {
-                        var nw = {x: cur.x + dx[j], y: cur.y + dy[j]};
-                        if (ok(nw) && colorAt(imageData, nw.x, nw.y) == color) {
-                            ctx.fillRect(nw.x, nw.y, 1, 1);
-                            queue.push(nw);
-                            ++newTo;
-                            used[nw.y][nw.x] = true;
-                        }
-                    }
-                }
-                fr = to;
-                to = newTo;
+            var str = prompt("text:");
+            if (str) {
+                ctx.font = text.size + "px sans-serif";
+                ctx.fillText(str, pos.x, pos.y);
             }
             swapColors();
-            painting = false;
+        }
+    };
+    
+    poly.mousedownHandler = function(event) {
+        if (event.which == 1) {
+            event.preventDefault();
+            var start = relativeCoords(ctx.canvas, event);
+            poly.handlers.sidesInput();
+            poly.handlers.widthInput();
+            ctx.lineWidth = overlay.lineWidth = poly.width;
+            overlay.fillStyle = ctx.fillStyle;
+            overlay.strokeStyle = ctx.strokeStyle;
+            var pos = relativeCoords(ctx.canvas, event);
+            
+            trackEventListeners(function(event) {
+                clear(start, pos, overlay);
+                pos = relativeCoords(ctx.canvas, event);
+                drawPoly(start, pos, overlay);
+            },
+            function(event) {
+                var cur = relativeCoords(ctx.canvas, event);
+                clear(start, pos, overlay); 
+                drawPoly(start, cur, ctx);
+            });
         }
     };
     
@@ -300,5 +468,7 @@ function drawModule(common) {
     draw.pencil = pencil;
     draw.eraser = eraser;
     draw["paint-bucket"] = paintBucket;
+    draw.text = text;
+    draw.polygon = poly;
     return draw;
 }

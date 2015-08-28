@@ -1,10 +1,10 @@
 (function () {
     
-    var toolNames = ["select-rect", "brush", "pencil", "eraser", "polygon",
+    var toolNames = ["brush", "pencil", "eraser", "polygon",
                 "spray", "paint-bucket", "text"];
     var mainPanelItems = ["new", "open", "save"];
     var moduleNames = ["draw"];
-    var toolbar, mainPanel, canvas, ctx,
+    var toolbar, mainPanel, canvas, ctx, overlayCs,
         mainWindow = document.body,
         firstScript = document.querySelector("script"),
         tools = Object.create(null),
@@ -62,7 +62,8 @@
     
     mainPanel = mainWindow.insertBefore(create("div", {class: "main-panel"}), firstScript);
     toolbar = mainWindow.insertBefore(create("div", {class: "toolbar"}), firstScript);
-    canvas = mainWindow.insertBefore(create("canvas", {width: 700, height: 500}), firstScript);
+    canvas = mainWindow.insertBefore(create("canvas", {width: 700, height: 500, class: "canvas"}), firstScript);
+    overlayCs = mainWindow.insertBefore(create("canvas", {width: 700, height: 500, class: "overlay"}), firstScript);
     ctx = canvas.getContext("2d");
     ctx.strokeStyle = "#ff00ff";
     ctx.fillStyle = "#ffffff";
@@ -73,7 +74,8 @@
     common.mainPanel = mainPanel;
     common.create = create;
     common.controlsPlaceHolder = controlsPlaceHolder;
-    
+    common.mainWindow = mainWindow;
+    common.overlay = overlayCs.getContext("2d");
         
     //add main panel items
     mainPanelItems.forEach(function(itemName) {
@@ -92,7 +94,7 @@
         if (!tools[toolName])
             tools[toolName] = Object.create(null);
     });
-    activateTool("select-rect");
+    activateTool("brush");
 
     //add color pickers
     toolbar.appendChild(create("input", {type: "color", class: "color1", id: "color1", value: "#ff00ff"}));
